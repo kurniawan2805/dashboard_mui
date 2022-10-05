@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { supabase } from '../utils/supabaseClient';
 import { DataGrid } from '@mui/x-data-grid';
-import Button from '@mui/material/Button';
+// import Button from '@mui/material/Button';
+
+import TableActions from './TableActions';
 
 // import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 // import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -25,6 +27,7 @@ export async function getStaticProps() {
   return {
     props: {
       offhire_db,
+      error,
     },
   };
 }
@@ -65,10 +68,12 @@ const columns = [
   {
     field: 'survey_type',
     headerName: 'Survey Type',
-    width: 70,
+    width: 80,
     headerAlign: 'center',
     align: 'center',
     editable: true,
+    type: 'singleSelect',
+    valueOptions: ['INS', 'OFF'],
   },
   {
     field: 'depot',
@@ -103,7 +108,7 @@ const columns = [
     headerName: 'Remarks',
     width: 100,
     editable: true,
-    type: 'text',
+    type: 'string',
     headerAlign: 'center',
     align: 'center',
     // valueFormatter: (params) => dayjs(params?.value).format('DD/MM/YYYY'),
@@ -112,64 +117,76 @@ const columns = [
     field: 'action',
     headerName: 'Action',
     sortable: false,
+    type: 'actions',
     renderCell: (params) => {
-      const onClick = (e) => {
-        e.stopPropagation(); // don't select this row after clicking
-        console.log(params);
-        // const {
-        //   id,
-        //   customer,
-        //   depot,
-        //   unit_no,
-        //   survey_date,
-        //   submit_date,
-        //   approval_date,
-        // } = params.row;
-
-        const api = params.api;
-        const thisRow = {};
-
-        const updateData = async (attrib) => {
-          const { data, error } = await supabase
-            .from('offhire_db')
-            .update({ depot: depot })
-            .eq('id', id);
-        };
-        api
-          .getAllColumns()
-          .filter((c) => c.field !== '__check__' && !!c)
-          .forEach(
-            (c) => (thisRow[c.field] = params.getValue(params.id, c.field))
-          );
-
-        // console.log(thisRow);
-
-        // return alert(JSON.stringify(thisRow, null, 4));
-      };
-
-      return (
-        <Button variant="outlined" size="small" onClick={onClick}>
-          Save
-        </Button>
-      );
+      <TableActions {...{ params, rowId, setRowId }} />;
     },
+    // const onClick = (e) => {
+    //   e.stopPropagation(); // don't select this row after clicking
+    //   console.log(params);
+    //   // const {
+    //   //   customer,
+    //   //   depot,
+    //   //   unit_no,
+    //   //   survey_date,
+    //   //   submit_date,
+    //   //   approval_date,
+    //   //   remark,
+    //   // } = params.row;
+
+    //   const api = params.api;
+    //   const thisRow = {};
+
+    //   const updateData = async (attrib) => {
+    //     const { data, error } = await supabase
+    //       .from('offhire_db')
+    //       .update({ depot: depot })
+    //       .eq('id', id);
+    //   };
+    //   api
+    //     .getAllColumns()
+    //     .filter((c) => c.field !== '__check__' && !!c)
+    //     .forEach(
+    //       (c) => (thisRow[c.field] = params.getValue(params.id, c.field))
+    //     );
+
+    // console.log(thisRow);
+
+    // return alert(JSON.stringify(thisRow, null, 4));
+    // };
+
+    //   return (
+    //     <Button variant="outlined" size="small" onClick={onClick}>
+    //       Save
+    //     </Button>
+    //   );
+    // },
   },
 ];
 
 // style={{ height: 800  }}
 
-export default function ShowTableGrid({ offhire_db }) {
+export default function ShowTableGrid({ offhire_db, error }) {
   // console.log(offhire_db);
-  const [value, setValue] = useState(null);
+  // const [value, setValue] = useState(null);
+  // console.log(error);
+  const [rowId, setRowId] = useState(null);
+  const [pageSize, setPageSize] = useState(10);
   return (
     <div style={{ width: '100%' }}>
       <DataGrid
         rows={offhire_db}
         columns={columns}
+        // getRowId={(row) => row._id}
         experimentalFeatures={{ newEditingApi: true }}
-        rowHeight={38}
-        sx={{ height: '100vh', width: '70vw', margin: 'auto' }}
-        onCellClick={(params, event) => event.stopPropagation()}
+        loading={!offhire_db.length}
+        rowHeight={35}
+        rowsPerPageOptions={[10, 15, 25, 50]}
+        pageSize={pageSize}
+        onPageSizeChange={(newPageSize) => setPageSize(newPageSize)}
+        sx={{ height: '98vh', width: '70vw', margin: 'auto', my: 1 }}
+        onCellEditCommit={(params) => setRowId(params.id)}
+        // onCellClick={(params, event) => event.stopPropagation()}
       />
     </div>
   );
